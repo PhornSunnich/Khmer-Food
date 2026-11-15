@@ -1,7 +1,7 @@
 <?php
-session_start();
+require_once 'security.php';
 if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
-    header("Location: ../admin/cms/dashboard.php");
+    header("Location: admin/cms/dashboard.php");
     exit();
 }
 ?>
@@ -21,7 +21,7 @@ if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
 <body class="min-h-screen flex items-center justify-center px-4 bg-cover bg-center bg-no-repeat bg-fixed"
       style="background-image: url('assets/images/banner/banner.jpg');">
 
-    <!-- TRUE FULL SUPER DARK BACKGROUND - exactly like Login & Register -->
+    <!-- Dark overlay - same as Login & Register -->
     <div class="fixed inset-0 bg-black bg-opacity-60"></div>
 
     <div class="relative z-10 bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-white/20 p-8">
@@ -32,10 +32,10 @@ if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
                 <i class="ti ti-lock text-4xl text-green-400"></i>
             </div>
             <h1 class="text-4xl font-bold text-green-400 drop-shadow-md">Forgot Password?</h1>
-            <p class="text-gray-300 mt-3 text-lg">No worries — we're here to help!</p>
+            <p class="text-gray-300 mt-3 text-lg">Contact the administrator to reset it.</p>
         </div>
 
-        <!-- Security Warning Card (clean & elegant) -->
+        <!-- Security Notice -->
         <div class="bg-gradient-to-br from-amber-600/25 to-orange-600/15 border border-amber-400/40 rounded-2xl p-7 text-center backdrop-blur-sm mb-7">
             <i class="ti ti-alert-triangle text-5xl text-amber-400 mb-4 block mx-auto"></i>
             <h3 class="text-xl font-bold text-white mb-2">Password Reset is Disabled</h3>
@@ -45,8 +45,8 @@ if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
             </p>
         </div>
 
-        <!-- Contact Admin Card -->
-        <div class="bg-white/10 border border-white/20 rounded-2xl p-7 backdrop-blur-sm mb-7">
+        <!-- Contact Admin -->
+        <div class="bg-white/10 border border-white/20 rounded-2xl p-7 backdrop-blur-sm mb-10">
             <div class="flex items-center gap-3 mb-5">
                 <i class="ti ti-mail text-2xl text-green-400"></i>
                 <h3 class="text-xl font-bold text-green-400">Contact Administrator</h3>
@@ -60,15 +60,7 @@ if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
             </div>
         </div>
 
-        <!-- Quick Tip Card -->
-        <div class="bg-white/10 border border-white/20 rounded-2xl p-7 text-center backdrop-blur-sm mb-10">
-            <p class="text-gray-400 text-sm mb-4">Quick tip (for testing only):</p>
-            <div class="bg-black/50 px-8 py-5 rounded-xl font-mono text-green-400 font-bold text-xl tracking-wider shadow-lg">
-                admin@gmail.com / 123
-            </div>
-        </div>
-
-        <!-- Back to Login Button -->
+        <!-- Back to Login -->
         <div class="text-center">
             <a href="index.php"
                class="inline-flex items-center gap-3 bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white font-bold py-4 px-14 rounded-2xl shadow-xl transition transform hover:scale-105 duration-200 text-lg">

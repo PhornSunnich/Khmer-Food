@@ -1,27 +1,44 @@
 <?php
-session_start();
+require_once 'security.php';
 if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
-    header("Location: ../admin/cms/dashboard.php");
+    header("Location: admin/cms/dashboard.php");
     exit();
 }
 
 require_once 'conn.php';
-$error = '';
-$success = '';
+
+// Make mysqli throw exceptions so try/catch works
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
+// 1 = active immediately, 0 = pending admin approval (safer)
+$defaultStatus = 1;
+
+// CSRF token
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+$error    = '';
+$success  = '';
+$fullname = '';
+$email    = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fullname = trim($_POST['fullname'] ?? '');
     $email    = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
+    $token    = $_POST['csrf_token'] ?? '';
 
-    if (empty($fullname) || empty($email) || empty($password)) {
+    if (!hash_equals($_SESSION['csrf_token'], $token)) {
+        $error = "Invalid request. Please refresh the page and try again.";
+    } elseif ($fullname === '' || $email === '' || $password === '') {
         $error = "All fields are required.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Please enter a valid email address.";
+    } elseif (mb_strlen($fullname, 'UTF-8') < 2 || mb_strlen($fullname, 'UTF-8') > 50) {
+        $error = "Full name must be between 2 and 50 characters.";
     } elseif (strlen($password) < 6) {
         $error = "Password must be at least 6 characters long.";
-    } elseif (strlen($fullname) < 2 || strlen($fullname) > 50) {
-        $error = "Full name must be between 2 and 50 characters.";
     } else {
         try {
             $check = $conn->prepare("SELECT id FROM admin_users WHERE email = ?");
@@ -33,25 +50,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = "This email is already registered.";
             } else {
                 $hashed = password_hash($password, PASSWORD_DEFAULT);
-                $stmt = $conn->prepare("INSERT INTO admin_users (fullname, email, password, role, status, created_at) 
-                                        VALUES (?, ?, ?, 'staff', 1, NOW())");
-                $stmt->bind_param("sss", $fullname, $email, $hashed);
-
-                if ($stmt->execute()) {
-                    $success = "Account created successfully! You can now <a href='index.php' class='underline font-bold text-green-400'>log in</a>.";
-                } else {
-                    $error = "Registration failed. Please try again later.";
-                }
+                $stmt = $conn->prepare(
+                    "INSERT INTO admin_users (fullname, email, password, role, status, created_at)
+                     VALUES (?, ?, ?, 'staff', ?, NOW())"
+                );
+                $stmt->bind_param("sssi", $fullname, $email, $hashed, $defaultStatus);
+                $stmt->execute();
                 $stmt->close();
+
+                $success = "Account created successfully! You can now <a href='index.php' class='underline font-bold text-green-400'>log in</a>.";
+                $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+                $fullname = '';
+                $email    = '';
             }
             $check->close();
+        } catch (mysqli_sql_exception $e) {
+            if ((int)$e->getCode() === 1062) {
+                $error = "This email is already registered.";
+            } else {
+                error_log("Register error: " . $e->getMessage());
+                $error = "An error occurred. Please try again.";
+            }
         } catch (Exception $e) {
+            error_log("Register error: " . $e->getMessage());
             $error = "An error occurred. Please try again.";
         }
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -70,15 +96,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             left: 20px;
             top: 50%;
             transform: translateY(-50%);
+            transform-origin: left top;
             color: #64748b;
             pointer-events: none;
             transition: all 0.25s ease;
             font-size: 1rem;
+            white-space: nowrap;
         }
         .peer:focus ~ .label-float,
         .peer:not(:placeholder-shown) ~ .label-float {
-            top: 14px;
-            transform: translateY(0) scale(0.80);
+            top: 8px;
+            transform: translateY(0) scale(0.75);
             color: #059669;
             font-weight: 600;
         }
@@ -115,25 +143,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Form -->
         <?php if (!$success): ?>
         <form method="POST" class="space-y-8">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+
             <div class="relative">
-                <input type="text" name="fullname" required
-                       value="<?= htmlspecialchars($fullname ?? '') ?>"
-                       class="peer w-full h-14 px-5 bg-white border border-white/30 rounded-2xl text-gray-900 placeholder-transparent focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-400/30 transition"
+                <input type="text" name="fullname" required maxlength="100"
+                       value="<?= htmlspecialchars($fullname) ?>"
+                       class="peer w-full h-14 px-5 pt-5 bg-white border border-white/30 rounded-2xl text-gray-900 placeholder-transparent focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-400/30 transition"
                        placeholder=" " autocomplete="name">
                 <label class="label-float">Full Name</label>
             </div>
 
             <div class="relative">
                 <input type="email" name="email" required
-                       value="<?= htmlspecialchars($email ?? '') ?>"
-                       class="peer w-full h-14 px-5 bg-white border border-white/30 rounded-2xl text-gray-900 placeholder-transparent focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-400/30 transition"
+                       value="<?= htmlspecialchars($email) ?>"
+                       class="peer w-full h-14 px-5 pt-5 bg-white border border-white/30 rounded-2xl text-gray-900 placeholder-transparent focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-400/30 transition"
                        placeholder=" " autocomplete="email">
                 <label class="label-float">Email Address</label>
             </div>
 
             <div class="relative">
                 <input type="password" name="password" required minlength="6"
-                       class="peer w-full h-14 px-5 bg-white border border-white/30 rounded-2xl text-gray-900 placeholder-transparent focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-400/30 transition"
+                       class="peer w-full h-14 px-5 pt-5 bg-white border border-white/30 rounded-2xl text-gray-900 placeholder-transparent focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-400/30 transition"
                        placeholder=" " autocomplete="new-password">
                 <label class="label-float">Password (min 6 characters)</label>
             </div>
@@ -146,7 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <div class="text-center mt-10 text-gray-300">
-            <p>Already have an account? 
+            <p>Already have an account?
                 <a href="index.php" class="text-green-400 font-bold hover:underline">Login here</a>
             </p>
         </div>
