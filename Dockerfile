@@ -8,7 +8,7 @@ RUN a2dismod mpm_event mpm_worker 2>/dev/null || true \
 RUN docker-php-ext-install mysqli
 
 # Copy the website (adjust the path to match your repo)
-COPY Assignment/website/ /var/www/html/
+COPY . /var/www/html/
 
 RUN chown -R www-data:www-data /var/www/html
 
