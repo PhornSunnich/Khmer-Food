@@ -1,16 +1,16 @@
-FROM php:8.2-apache
+FROM php:8.3-apache
 
-# ដោះស្រាយបញ្ហា Apache MPM conflict
-RUN a2dismod mpm_event && a2enmod mpm_prefork
+# Fix: keep only ONE MPM (mod_php needs prefork)
+RUN a2dismod mpm_event mpm_worker 2>/dev/null || true \
+ && a2enmod mpm_prefork rewrite headers
 
-# ysqli extension
-RUN docker-php-ext-install mysqli pdo pdo_mysql \
-    && docker-php-ext-enable mysqli pdo pdo_mysql
+# PHP extensions
+RUN docker-php-ext-install mysqli
 
-# កំណត់ឱ្យ Apache ប្រើប្រាស់ Port តាម Railway Environment Variable ($PORT)
-RUN sed -i "s/80/\${PORT}/g" /etc/apache2/sites-available/000-default.conf /etc/apache2/ports.conf
+# Copy the website (adjust the path to match your repo)
+COPY Assignment/website/ /var/www/html/
 
-# ចម្លងកូដទាំងអស់ទៅកាន់ Apache web root
-COPY . /var/www/html/
+RUN chown -R www-data:www-data /var/www/html
 
-EXPOSE 80
+# Railway gives a PORT variable; make Apache listen on it
+CMD ["/bin/sh", "-c", "sed -i \"s/Listen 80/Listen ${PORT:-80}/\" /etc/apache2/ports.conf && sed -i \"s/:80>/:${PORT:-80}>/\" /etc/apache2/sites-available/000-default.conf && apache2-foreground"]
