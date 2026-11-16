@@ -1,8 +1,9 @@
 FROM php:8.3-apache
 
-# ដោះស្រាយបញ្ហា MPM ឱ្យបានត្រឹមត្រូវ (បិទ mpm_event/worker និងបើក mpm_prefork)
-RUN a2dismod mpm_event mpm_worker 2>/dev/null || true \
-    && a2enmod mpm_prefork \
+# លុប MPM modules ទាំងអស់ចេញពី mods-enabled ហើយបើកតែ mpm_prefork មួយគត់
+RUN rm -f /etc/apache2/mods-enabled/mpm_*.load /etc/apache2/mods-enabled/mpm_*.conf \
+    && ln -s /etc/apache2/mods-available/mpm_prefork.load /etc/apache2/mods-enabled/mpm_prefork.load \
+    && ln -s /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/mpm_prefork.conf \
     && a2enmod rewrite headers
 
 # mysqli និង pdo extensions
