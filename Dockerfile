@@ -1,12 +1,14 @@
 FROM php:8.3-apache
 
-# លុប MPM modules ទាំងអស់ចេញពី mods-enabled ហើយបើកតែ mpm_prefork មួយគត់
-RUN rm -f /etc/apache2/mods-enabled/mpm_*.load /etc/apache2/mods-enabled/mpm_*.conf \
+# បង្ខំលុប និងបិទ MPM modules ផ្សេងៗចោល រួចเปิดใช้ mpm_prefork តែមួយគត់
+RUN rm -f /etc/apache2/mods-enabled/mpm_event.* \
+        /etc/apache2/mods-enabled/mpm_worker.* \
+    && rm -f /etc/apache2/mods-enabled/mpm_prefork.* \
     && ln -s /etc/apache2/mods-available/mpm_prefork.load /etc/apache2/mods-enabled/mpm_prefork.load \
     && ln -s /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/mpm_prefork.conf \
     && a2enmod rewrite headers
 
-# mysqli និង pdo extensions
+# ຕິດຕັ້ງ mysqli និង pdo extensions
 RUN docker-php-ext-install mysqli pdo pdo_mysql
 
 # ចម្លងកូដទាំងអស់ទៅកាន់ Apache web root
