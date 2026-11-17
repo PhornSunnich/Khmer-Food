@@ -1,8 +1,8 @@
 FROM php:8.3-apache
 
-# បិទ MPM ផ្សេងទៀត និងបើក mpm_prefork ដោយសុវត្ថិភាព (មិនធ្វើឱ្យ Build ខូច)
-RUN a2dismod mpm_event mpm_worker 2>/dev/null || true \
-    && a2enmod mpm_prefork 2>/dev/null || true \
+# រក្សាទុក mpm_event និងបិទ mpm_prefork/mpm_worker ដើម្បីការពារការตีกัน
+RUN a2dismod -f mpm_prefork mpm_worker 2>/dev/null || true \
+    && a2enmod mpm_event 2>/dev/null || true \
     && a2enmod rewrite headers
 
 # ដំឡើង mysqli និង pdo_mysql សម្រាប់ភ្ជាប់ Database
