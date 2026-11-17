@@ -1,8 +1,9 @@
 FROM php:8.3-apache
 
-# បិទ MPM modules ផ្សេងទៀតដែលបង្កជម្លោះ និងបើកเฉพาะ mpm_prefork តែមួយគត់
-RUN a2dismod -f mpm_event mpm_worker 2>/dev/null || true \
-    && a2enmod mpm_prefork \
+# បង្ខំលុប Symlinks ของ mpm_event និង mpm_worker ចោល ហើយបើក mpm_prefork តែមួយគត់
+RUN rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.* \
+    && ln -s /etc/apache2/mods-available/mpm_prefork.load /etc/apache2/mods-enabled/ \
+    && ln -s /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/ \
     && a2enmod rewrite headers
 
 # ដំឡើង mysqli និង pdo_mysql សម្រាប់ភ្ជាប់ Database
