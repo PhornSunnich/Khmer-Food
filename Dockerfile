@@ -1,15 +1,15 @@
 FROM php:8.3-apache
 
 # លុបស៊ីមលីង MPM modules ទាំងអស់ចេញពី mods-enabled និងបើក mpm_prefork តែមួយគត់
-RUN rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.* /etc/apache2/mods-enabled/mpm_prefork.* \
-    && ln -s /etc/apache2/mods-available/mpm_prefork.load /etc/apache2/mods-enabled/ \
-    && ln -s /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/ \
+RUN rm -f /etc/apache2/mods-enabled/mpm_*.load /etc/apache2/mods-enabled/mpm_*.conf \
+    && ln -s /etc/apache2/mods-available/mpm_prefork.load /etc/apache2/mods-enabled/mpm_prefork.load \
+    && ln -s /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/mpm_prefork.conf \
     && a2enmod rewrite headers
 
 # ដំឡើង mysqli និង pdo_mysql សម្រាប់ភ្ជាប់ Database
 RUN docker-php-ext-install mysqli pdo pdo_mysql
 
-# กำหนด ServerName เพื่อป้องกัน Warning
+# កំណត់ ServerName ដើម្បីការពារ Warning
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # ចម្លង Source Code ទាំងអស់ចូល Apache directory
